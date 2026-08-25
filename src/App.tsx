@@ -55,19 +55,16 @@ useEffect(() => {
   const [lifestyle, setLifestyle] = useState<Lifestyle>('comfortable');
   const [collapsed, setCollapsed] = useState(false);
 
-const homeCurrency = getCurrency(form.currencyCode);
+  const homeCurrency = getCurrency(form.currencyCode);
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
+  const annualRate = (form.annualReturnPct || 0) / 100;
 
-  const annualRate = form.annualReturnPct / 100;
+  // 🌟 直接用当前货币进行复利计算，不再绕弯子折腾 USD 汇率
+  const currentSav = Number(form.currentSavings || 0);
+  const futureSavingsLocal = currentSav * Math.pow(1 + annualRate, yearsToRetire);
 
-  // 1. 先将用户当前选择的货币金额换算成标准的美元（USD）
-  const currentSavingsUsd = Number(form.currentSavings) / homeCurrency.perUsd;
-
-  // 2. 复利终值计算公式：未来总资产 (USD) = 当前存款 (USD) * (1 + 年化收益率)^年数
-  const futureSavingsUsd = currentSavingsUsd * Math.pow(1 + annualRate, yearsToRetire);
-
-  // 3. 转换回用户当前选择的货币显示
-  const futureSavingsLocal = futureSavingsUsd * homeCurrency.perUsd;
+  // 同时也保留给 computePlan 用的 USD 版本
+  const currentSavingsUsd = currentSav / (homeCurrency.perUsd || 1);
 
   const result = useMemo(
     () =>
@@ -137,7 +134,7 @@ const homeCurrency = getCurrency(form.currencyCode);
               <PlannerForm value={form} onChange={setForm} />
             </div>
             {/* 📊 移到左侧下方的指数平均回报参考提示（完美撑长左边高度） */}
-              <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+              <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-2">
                 <span className="font-bold text-slate-700 block">💡 Historical Market Returns:</span>
                 <div className="flex justify-between"><span>🇺🇸 S&P 500:</span> <span className="font-semibold text-slate-700">~10% (7% adj.)</span></div>
                 <div className="flex justify-between"><span>🚀 Nasdaq 100 (QQQ):</span> <span className="font-semibold text-slate-700">~13%</span></div>
@@ -172,12 +169,12 @@ const homeCurrency = getCurrency(form.currencyCode);
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Starting Principal</span>
                   <div className="text-xl font-bold text-slate-900 mt-1">
-                    {homeCurrency.symbol}{Number(form.currentSavings || 0).toLocaleString()}
+                    {homeCurrency.symbol}{currentSav.toLocaleString()}
                   </div>
                   <span className="text-xs text-slate-500 mt-0.5 block">At age {form.currentAge}</span>
                 </div>
 
-                {/* 2. 预计复利终点 */}
+                {/* 2. 预计复利终点（直接呈现真实复利结果） */}
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projected Wealth</span>
                   <div className="text-xl font-bold text-slate-900 mt-1">
@@ -186,11 +183,11 @@ const homeCurrency = getCurrency(form.currencyCode);
                   <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
                 </div>
 
-                {/* 3. 差额对比 (Surplus or Gap) —— 兼容多种可能的属性名，彻底根除 NaN */}
+                {/* 3. 差额对比 (Surplus or Gap) */}
                 {(() => {
                   const perUsd = homeCurrency.perUsd || 1;
                   
-                  // 从 result 对象中安全提取目标金额（兼容 nestEggUsd, nestEgg, 或其他可能的命名）
+                  // 获取上方组件算出来的总目标 Nest Egg (USD)
                   const targetUsd = result 
                     ? (typeof (result as any).nestEggUsd === 'number' ? (result as any).nestEggUsd 
                         : typeof (result as any).nestEgg === 'number' ? (result as any).nestEgg 
@@ -198,9 +195,9 @@ const homeCurrency = getCurrency(form.currencyCode);
                         : 0)
                     : 0;
                   
-                  const diffUsd = futureSavingsUsd - targetUsd;
-                  const diffLocal = diffUsd * perUsd;
-                  const isSurplus = diffUsd >= 0;
+                  const targetLocal = targetUsd * perUsd;
+                  const diffLocal = futureSavingsLocal - targetLocal;
+                  const isSurplus = diffLocal >= 0;
 
                   return (
                     <div className={`p-4 rounded-xl border ${isSurplus ? 'bg-emerald-50/60 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
