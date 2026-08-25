@@ -124,23 +124,25 @@ useEffect(() => {
 
         <AdSlot className="mt-10 min-h-[90px]" format="horizontal" />
 
-        <div className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-5">
-          <div className="lg:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8">
-              <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
-              <p className="mt-1 mb-5 text-sm text-slate-500">
-                Tell us about your timeline and savings.
-              </p>
-              <PlannerForm value={form} onChange={setForm} />
-            </div>
-            {/* 📊 移到左侧下方的指数平均回报参考提示（完美撑长左边高度） */}
-              <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-2">
+      <div className="lg:col-span-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8 flex flex-col justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
+                <p className="mt-1 mb-5 text-sm text-slate-500">
+                  Tell us about your timeline and savings.
+                </p>
+                <PlannerForm value={form} onChange={setForm} />
+              </div>
+
+              {/* 📊 严格内嵌在白色大方框内部最底部的市场参考 */}
+              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-2">
                 <span className="font-bold text-slate-700 block">💡 Historical Market Returns:</span>
                 <div className="flex justify-between"><span>🇺🇸 S&P 500:</span> <span className="font-semibold text-slate-700">~10% (7% adj.)</span></div>
                 <div className="flex justify-between"><span>🚀 Nasdaq 100 (QQQ):</span> <span className="font-semibold text-slate-700">~13%</span></div>
                 <div className="flex justify-between"><span>🇪🇺 Europe Stoxx 600:</span> <span className="font-semibold text-slate-700">~8%</span></div>
                 <div className="flex justify-between"><span>🌏 Asia Emerging:</span> <span className="font-semibold text-slate-700">~7%</span></div>
               </div>
+            </div>
           </div>
 
           <div className="lg:col-span-3">
@@ -174,7 +176,7 @@ useEffect(() => {
                   <span className="text-xs text-slate-500 mt-0.5 block">At age {form.currentAge}</span>
                 </div>
 
-                {/* 2. 预计复利终点（直接呈现真实复利结果） */}
+                {/* 2. 预计复利终点 */}
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projected Wealth</span>
                   <div className="text-xl font-bold text-slate-900 mt-1">
@@ -183,7 +185,7 @@ useEffect(() => {
                   <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
                 </div>
 
-                {/* 3. 差额对比 (Surplus or Gap) */}
+                {/* 3. 真实差额对比 (Projected Wealth - Total Nest Egg Needed) */}
                 {(() => {
                   const perUsd = homeCurrency.perUsd || 1;
                   
@@ -196,6 +198,7 @@ useEffect(() => {
                     : 0;
                   
                   const targetLocal = targetUsd * perUsd;
+                  // 🌟 核心修正：用“预计复利终点”减去“目标总资金”才是真正的盈余或缺口！
                   const diffLocal = futureSavingsLocal - targetLocal;
                   const isSurplus = diffLocal >= 0;
 
