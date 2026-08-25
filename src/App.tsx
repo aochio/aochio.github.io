@@ -182,12 +182,15 @@ function App() {
                   <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
                 </div>
 
-                {/* 3. 差额对比 */}
+                {/* 3. 差额对比（精准提取目标总资产进行减法） */}
                 {(() => {
                   const perUsd = homeCurrency.perUsd || 1;
+                  
+                  // 多重兼容匹配计算结果中的目标总资产字段
                   const targetUsd = result 
                     ? (typeof (result as any).nestEggUsd === 'number' ? (result as any).nestEggUsd 
                         : typeof (result as any).nestEgg === 'number' ? (result as any).nestEgg 
+                        : typeof (result as any).totalNestEgg === 'number' ? (result as any).totalNestEgg 
                         : typeof (result as any).targetUsd === 'number' ? (result as any).targetUsd 
                         : 0)
                     : 0;
