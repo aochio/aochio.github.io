@@ -58,6 +58,15 @@ useEffect(() => {
   const homeCurrency = getCurrency(form.currencyCode);
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
 
+  const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
+  const annualRate = form.annualReturnPct / 100;
+
+// 复利终值计算公式：未来总资产 = 当前存款 * (1 + 年化收益率)^年数
+  const futureSavingsUsd = form.currentSavingsUsd * Math.pow(1 + annualRate, yearsToRetire);
+
+// 转换回用户当前选择的货币显示
+  const futureSavingsLocal = futureSavingsUsd * homeCurrency.perUsd;
+
   const result = useMemo(
     () =>
       computePlan({
