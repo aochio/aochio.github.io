@@ -1,3 +1,4 @@
+TypeScript
 import { useEffect, useMemo, useState } from 'react';
 import { Compass } from 'lucide-react';
 import { PlannerForm, type FormState } from '@/components/PlannerForm';
@@ -12,8 +13,7 @@ const HERO_IMAGE =
   'https://images.pexels.com/photos/4603354/pexels-photo-4603354.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
 
 function App() {
-  // Load the AdSense script once. It only activates ads once you set your
-  // publisher ID in AdSlot.tsx and add real slot IDs.
+  // Load the AdSense script once.
   useEffect(() => {
     if (document.getElementById('adsense-script')) return;
     const s = document.createElement('script');
@@ -34,11 +34,10 @@ function App() {
   });
 
   // 核心：页面加载时通过 IP 自动检测并设置货币
-useEffect(() => {
+  useEffect(() => {
     fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
-            // Check if data.currency exists and is a valid string
             if (data && data.currency) {
                 setForm(prev => ({
                     ...prev,
@@ -49,25 +48,25 @@ useEffect(() => {
         .catch(err => {
             console.log("Could not detect currency via IP, using default USD", err);
         });
-}, []);
+  }, []);
   
   const [country, setCountry] = useState<Country>(COUNTRIES[0]);
   const [lifestyle, setLifestyle] = useState<Lifestyle>('comfortable');
   const [collapsed, setCollapsed] = useState(false);
 
-const homeCurrency = getCurrency(form.currencyCode);
+  const homeCurrency = getCurrency(form.currencyCode);
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
 
   const annualRate = form.annualReturnPct / 100;
 
   // 1. 先将用户当前选择的货币金额换算成标准的美元（USD）
-  const currentSavingsUsd = Number(form.currentSavings) / homeCurrency.perUsd;
+  const currentSavingsUsd = Number(form.currentSavings || 0) / (homeCurrency.perUsd || 1);
 
   // 2. 复利终值计算公式：未来总资产 (USD) = 当前存款 (USD) * (1 + 年化收益率)^年数
   const futureSavingsUsd = currentSavingsUsd * Math.pow(1 + annualRate, yearsToRetire);
 
   // 3. 转换回用户当前选择的货币显示
-  const futureSavingsLocal = futureSavingsUsd * homeCurrency.perUsd;
+  const futureSavingsLocal = futureSavingsUsd * (homeCurrency.perUsd || 1);
 
   const result = useMemo(
     () =>
@@ -127,90 +126,107 @@ const homeCurrency = getCurrency(form.currencyCode);
 
         <AdSlot className="mt-10 min-h-[90px]" format="horizontal" />
 
+        {/* 双栏布局 */}
         <div className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-5">
+          
+          {/* 左侧：表单栏 + 指数参考（通过 Sticky 完美拉长对齐右侧） */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8">
-              <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
-              <p className="mt-1 mb-5 text-sm text-slate-500">
-                Tell us about your timeline and savings.
-              </p>
-              <PlannerForm value={form} onChange={setForm} />
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
+                <p className="mt-1 mb-5 text-sm text-slate-500">
+                  Tell us about your timeline and savings.
+                </p>
+                <PlannerForm value={form} onChange={setForm} />
+              </div>
+
+              {/* 📊 移到左侧下方的指数平均回报参考提示（完美撑长左边高度） */}
+              <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+                <span className="font-bold text-slate-700 block">💡 Historical Market Returns:</span>
+                <div className="flex justify-between"><span>🇺🇸 S&P 500:</span> <span className="font-semibold text-slate-700">~10% (7% adj.)</span></div>
+                <div className="flex justify-between"><span>🚀 Nasdaq 100 (QQQ):</span> <span className="font-semibold text-slate-700">~13%</span></div>
+                <div className="flex justify-between"><span>🇪🇺 Europe Stoxx 600:</span> <span className="font-semibold text-slate-700">~8%</span></div>
+                <div className="flex justify-between"><span>🌏 Asia Emerging:</span> <span className="font-semibold text-slate-700">~7%</span></div>
+              </div>
             </div>
           </div>
 
-          <div className="lg:col-span-3">
+          {/* 右侧：结果展示区 + 一体化对比卡片 */}
+          <div className="lg:col-span-3 space-y-6">
             <Results
               result={result}
               homeCurrency={homeCurrency}
               country={country}
               yearsToRetire={yearsToRetire}
             />
-            {/* 🌟 新增的高亮对比卡片：展示复利增长与资产蜕变 */}
             
-<div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  
-                  {/* 标题栏 */}
-                  <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                          <span>🎯</span>
-                          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Retirement Gap & Wealth Projection</h3>
-                      </div>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">
-                          {yearsToRetire} Years to Go
-                      </span>
-                  </div>
-
-                  {/* 核心数据三栏对比：起点 -> 预计终点 vs 目标需求 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                      
-                      {/* 1. 当前起点 */}
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Starting Principal</span>
-                          <div className="text-xl font-bold text-slate-900 mt-1">
-                              {homeCurrency.symbol}{Number(form.currentSavings).toLocaleString()}
-                          </div>
-                          <span className="text-xs text-slate-500 mt-0.5 block">At age {form.currentAge}</span>
-                      </div>
-
-                      {/* 2. 预计复利终点 */}
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projected Wealth</span>
-                          <div className="text-xl font-bold text-slate-900 mt-1">
-                              {homeCurrency.symbol}{Math.round(
-                                  (Number(form.currentSavings) / homeCurrency.perUsd) * 
-                                  Math.pow(1 + (form.annualReturnPct / 100), yearsToRetire) * 
-                                  homeCurrency.perUsd
-                              ).toLocaleString()}
-                          </div>
-                          <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
-                      </div>
-
-                      {/* 3. 差额对比 (Surplus or Gap) */}
-                      {(() => {
-                          const projectedUsd = (Number(form.currentSavings) / homeCurrency.perUsd) * Math.pow(1 + (form.annualReturnPct / 100), yearsToRetire);
-                          const targetUsd = result.nestEggUsd; // 对应上方 Total Nest Egg Needed 的美元数值
-                          const diffUsd = projectedUsd - targetUsd;
-                          const diffLocal = diffUsd * homeCurrency.perUsd;
-                          const isSurplus = diffUsd >= 0;
-
-                          return (
-                              <div className={`p-4 rounded-xl border ${isSurplus ? 'bg-emerald-50/60 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
-                                  <span className={`text-[11px] font-semibold uppercase tracking-wider ${isSurplus ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                      {isSurplus ? 'Surplus / Ahead' : 'Remaining Gap'}
-                                  </span>
-                                  <div className={`text-xl font-bold mt-1 ${isSurplus ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                      {homeCurrency.symbol}{Math.abs(Math.round(diffLocal)).toLocaleString()}
-                                  </div>
-                                  <span className={`text-xs font-medium mt-0.5 block ${isSurplus ? 'text-emerald-600/90' : 'text-amber-600/90'}`}>
-                                      {isSurplus ? '🎉 Above target nest egg' : '⚠️ Need more to reach goal'}
-                                  </span>
-                              </div>
-                          );
-                      })()}
-
-                  </div>
+            {/* 🌟 完美修复 NaN 的一体化对比卡片 */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span>🎯</span>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Retirement Gap & Wealth Projection</h3>
+                </div>
+                <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                  {yearsToRetire} Years to Go
+                </span>
               </div>
-              {/* 🌟 对比卡片结束 */}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                
+                {/* 1. 当前起点 */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Starting Principal</span>
+                  <div className="text-xl font-bold text-slate-900 mt-1">
+                    {homeCurrency.symbol}{Number(form.currentSavings || 0).toLocaleString()}
+                  </div>
+                  <span className="text-xs text-slate-500 mt-0.5 block">At age {form.currentAge}</span>
+                </div>
+
+                {/* 2. 预计复利终点 */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projected Wealth</span>
+                  <div className="text-xl font-bold text-slate-900 mt-1">
+                    {homeCurrency.symbol}{Math.round(futureSavingsLocal).toLocaleString()}
+                  </div>
+                  <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
+                </div>
+
+                {/* 3. 差额对比 (Surplus or Gap) —— 兼容多种可能的属性名，彻底根除 NaN */}
+                {(() => {
+                  const perUsd = homeCurrency.perUsd || 1;
+                  
+                  // 从 result 对象中安全提取目标金额（兼容 nestEggUsd, nestEgg, 或其他可能的命名）
+                  const targetUsd = result 
+                    ? (typeof (result as any).nestEggUsd === 'number' ? (result as any).nestEggUsd 
+                        : typeof (result as any).nestEgg === 'number' ? (result as any).nestEgg 
+                        : typeof (result as any).targetUsd === 'number' ? (result as any).targetUsd 
+                        : 0)
+                    : 0;
+                  
+                  const diffUsd = futureSavingsUsd - targetUsd;
+                  const diffLocal = diffUsd * perUsd;
+                  const isSurplus = diffUsd >= 0;
+
+                  return (
+                    <div className={`p-4 rounded-xl border ${isSurplus ? 'bg-emerald-50/60 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
+                      <span className={`text-[11px] font-semibold uppercase tracking-wider ${isSurplus ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        {isSurplus ? 'Surplus / Ahead' : 'Remaining Gap'}
+                      </span>
+                      <div className={`text-xl font-bold mt-1 ${isSurplus ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {homeCurrency.symbol}{Math.abs(Math.round(diffLocal)).toLocaleString()}
+                      </div>
+                      <span className={`text-xs font-medium mt-0.5 block ${isSurplus ? 'text-emerald-600/90' : 'text-amber-600/90'}`}>
+                        {isSurplus ? '🎉 Above target nest egg' : '⚠️ Need more to reach goal'}
+                      </span>
+                    </div>
+                  );
+                })()}
+
+              </div>
+            </div>
+            {/* 🌟 对比卡片结束 */}
+
           </div>
         </div>
 
