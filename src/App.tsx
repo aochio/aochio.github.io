@@ -143,6 +143,38 @@ useEffect(() => {
               country={country}
               yearsToRetire={yearsToRetire}
             />
+            {/* 🌟 新增的高亮对比卡片：展示复利增长与资产蜕变 */}
+              <div className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-6 text-white shadow-xl">
+                  <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-emerald-400">📈 Wealth Growth Projection</h3>
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                          {yearsToRetire} Years to Retirement
+                      </span>
+                  </div>
+
+                  <p className="text-sm text-slate-300 mb-6">
+                      With your current timeline (Age {form.currentAge} to {form.retirementAge}) and <span className="text-emerald-400 font-semibold">{form.annualReturnPct}%</span> expected return:
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                          <span className="text-xs text-slate-400 uppercase tracking-wider">Starting Principal</span>
+                          <div className="text-2xl font-bold text-slate-200 mt-1">
+                              {homeCurrency.symbol}{form.currentSavings.toLocaleString()}
+                          </div>
+                          <span className="text-xs text-slate-500">{form.currencyCode}</span>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/40">
+                          <span className="text-xs text-emerald-400 uppercase tracking-wider">Projected at Retirement</span>
+                          <div className="text-2xl font-bold text-emerald-400 mt-1">
+                              {homeCurrency.symbol}{Math.round(futureSavingsLocal).toLocaleString()}
+                          </div>
+                          <span className="text-xs text-emerald-500">Compound Total</span>
+                      </div>
+                  </div>
+              </div>
+              {/* 🌟 对比卡片结束 */}
           </div>
         </div>
 
