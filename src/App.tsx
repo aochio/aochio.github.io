@@ -55,15 +55,18 @@ useEffect(() => {
   const [lifestyle, setLifestyle] = useState<Lifestyle>('comfortable');
   const [collapsed, setCollapsed] = useState(false);
 
-  const homeCurrency = getCurrency(form.currencyCode);
+const homeCurrency = getCurrency(form.currencyCode);
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
 
   const annualRate = form.annualReturnPct / 100;
 
-// 复利终值计算公式：未来总资产 = 当前存款 * (1 + 年化收益率)^年数
-  const futureSavingsUsd = form.currentSavingsUsd * Math.pow(1 + annualRate, yearsToRetire);
+  // 1. 先将用户当前选择的货币金额换算成标准的美元（USD）
+  const currentSavingsUsd = Number(form.currentSavings) / homeCurrency.perUsd;
 
-// 转换回用户当前选择的货币显示
+  // 2. 复利终值计算公式：未来总资产 (USD) = 当前存款 (USD) * (1 + 年化收益率)^年数
+  const futureSavingsUsd = currentSavingsUsd * Math.pow(1 + annualRate, yearsToRetire);
+
+  // 3. 转换回用户当前选择的货币显示
   const futureSavingsLocal = futureSavingsUsd * homeCurrency.perUsd;
 
   const result = useMemo(
@@ -72,12 +75,12 @@ useEffect(() => {
         currentAge: form.currentAge,
         retirementAge: form.retirementAge,
         yearsInRetirement: form.yearsInRetirement,
-        currentSavingsUsd: form.currentSavings / homeCurrency.perUsd,
-        annualReturn: form.annualReturnPct / 100,
+        currentSavingsUsd: currentSavingsUsd,
+        annualReturn: annualRate,
         country,
         lifestyle,
       }),
-    [form, country, lifestyle, homeCurrency.perUsd],
+    [form, country, lifestyle, homeCurrency.perUsd, currentSavingsUsd, annualRate],
   );
 
   return (
@@ -143,33 +146,40 @@ useEffect(() => {
               yearsToRetire={yearsToRetire}
             />
             {/* 🌟 新增的高亮对比卡片：展示复利增长与资产蜕变 */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-6 text-white shadow-xl">
+            
+<div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-base font-bold text-emerald-400">📈 Wealth Growth Projection</h3>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      <h3 className="text-base font-bold text-slate-900">📈 Wealth Growth Projection</h3>
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                           {yearsToRetire} Years to Retirement
                       </span>
                   </div>
 
-                  <p className="text-sm text-slate-300 mb-6">
-                      With your current timeline (Age {form.currentAge} to {form.retirementAge}) and <span className="text-emerald-400 font-semibold">{form.annualReturnPct}%</span> expected return:
+                  <p className="text-sm text-slate-500 mb-6">
+                      With your current timeline (Age {form.currentAge} to {form.retirementAge}) and <span className="text-emerald-600 font-semibold">{form.annualReturnPct}%</span> expected return:
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                          <span className="text-xs text-slate-400 uppercase tracking-wider">Starting Principal</span>
-                          <div className="text-2xl font-bold text-slate-200 mt-1">
-                              {homeCurrency.symbol}{form.currentSavings.toLocaleString()}
+                      {/* 起始资金 */}
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Starting Principal</span>
+                          <div className="text-2xl font-bold text-slate-900 mt-1">
+                              {homeCurrency.symbol}{Number(form.currentSavings).toLocaleString()}
                           </div>
                           <span className="text-xs text-slate-500">{form.currencyCode}</span>
                       </div>
 
-                      <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/40">
-                          <span className="text-xs text-emerald-400 uppercase tracking-wider">Projected at Retirement</span>
-                          <div className="text-2xl font-bold text-emerald-400 mt-1">
-                              {homeCurrency.symbol}{Math.round(futureSavingsLocal).toLocaleString()}
+                      {/* 退休时预测资产（修复了 NaN 问题） */}
+                      <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                          <span className="text-xs text-emerald-700 uppercase tracking-wider font-medium">Projected at Retirement</span>
+                          <div className="text-2xl font-bold text-emerald-600 mt-1">
+                              {homeCurrency.symbol}{Math.round(
+                                  (Number(form.currentSavings) / homeCurrency.perUsd) * 
+                                  Math.pow(1 + (form.annualReturnPct / 100), yearsToRetire) * 
+                                  homeCurrency.perUsd
+                              ).toLocaleString()}
                           </div>
-                          <span className="text-xs text-emerald-500">Compound Total</span>
+                          <span className="text-xs text-emerald-600/80">Compound Total</span>
                       </div>
                   </div>
               </div>
