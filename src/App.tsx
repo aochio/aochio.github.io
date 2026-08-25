@@ -58,7 +58,6 @@ useEffect(() => {
   const homeCurrency = getCurrency(form.currencyCode);
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
 
-  const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
   const annualRate = form.annualReturnPct / 100;
 
 // 复利终值计算公式：未来总资产 = 当前存款 * (1 + 年化收益率)^年数
