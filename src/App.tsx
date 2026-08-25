@@ -26,12 +26,31 @@ function App() {
 
   const [form, setForm] = useState<FormState>({
     currencyCode: 'USD',
-    currentAge: 35,
+    currentAge: 20,
     retirementAge: 60,
     yearsInRetirement: 25,
     currentSavings: 20000,
     annualReturnPct: 5,
   });
+
+  // 核心：页面加载时通过 IP 自动检测并设置货币
+useEffect(() => {
+    fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(data => {
+            const supportedCurrencies = ['USD', 'CAD', 'EUR', 'GBP', 'CNY', 'AUD', 'SGD', 'JPY'];
+            if (data && data.currency && supportedCurrencies.includes(data.currency)) {
+                setForm(prev => ({
+                    ...prev,
+                    currencyCode: data.currency
+                }));
+            }
+        })
+        .catch(() => {
+            // 失败时保持默认
+        });
+}, []);
+  
   const [country, setCountry] = useState<Country>(COUNTRIES[0]);
   const [lifestyle, setLifestyle] = useState<Lifestyle>('comfortable');
   const [collapsed, setCollapsed] = useState(false);
