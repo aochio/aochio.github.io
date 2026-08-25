@@ -38,16 +38,16 @@ useEffect(() => {
     fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
-            const supportedCurrencies = ['USD', 'CAD', 'EUR', 'GBP', 'CNY', 'AUD', 'SGD', 'JPY'];
-            if (data && data.currency && supportedCurrencies.includes(data.currency)) {
+            // Check if data.currency exists and is a valid string
+            if (data && data.currency) {
                 setForm(prev => ({
                     ...prev,
                     currencyCode: data.currency
                 }));
             }
         })
-        .catch(() => {
-            // 失败时保持默认
+        .catch(err => {
+            console.log("Could not detect currency via IP, using default USD", err);
         });
 }, []);
   
