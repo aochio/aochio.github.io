@@ -1,135 +1,22 @@
-HTML
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GetGeoFire | S&P 500 Expat Retirement & Wealth Simulator</title>
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between p-4 sm:p-6">
-
-    <!-- Main Container -->
-    <main class="max-w-3xl w-full mx-auto bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-800 my-auto">
-        
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">Geo-Arbitrage Engine</span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mt-3">
-                GetGeoFire
-            </h1>
-            <p class="text-slate-400 text-sm sm:text-base mt-2">Calculate how far your S&P 500 portfolio can take you living abroad.</p>
-        </div>
-
-        <!-- Inputs Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-            
-            <!-- Portfolio Input -->
-            <div>
-                <label class="block text-sm font-medium mb-2 text-slate-300">Total S&P 500 Portfolio Value ($)</label>
-                <input type="number" id="portfolio" value="1000000" step="25000" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" oninput="calculateRetirement()">
-            </div>
-
-            <!-- Target Country -->
-            <div>
-                <label class="block text-sm font-medium mb-2 text-slate-300">Target Region (Cost of Living)</label>
-                <select id="countryCost" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" onchange="calculateRetirement()">
-                    <option value="900">Vietnam / Cambodia (Budget/Comfortable: ~$900/mo)</option>
-                    <option value="1300" selected>Thailand / Philippines (Standard Expat: ~$1,300/mo)</option>
-                    <option value="1800">Malaysia / Bali / Sri Lanka (Upscale Expat: ~$1,800/mo)</option>
-                    <option value="3000">Singapore / Tokyo (High Cost Asia: ~$3,000/mo)</option>
-                </select>
-            </div>
-
-            <!-- S&P 500 Expected Return -->
-            <div>
-                <label class="block text-sm font-medium mb-2 text-slate-300">S&P 500 Expected Annual Return: <span id="returnVal" class="text-emerald-400 font-bold">7</span>%</label>
-                <input type="range" id="returnRate" min="3" max="10" step="0.5" value="7" class="w-full accent-emerald-500 cursor-pointer" oninput="calculateRetirement()">
-                <p class="text-xs text-slate-500 mt-1">Historically ~7% adjusted for US inflation</p>
-            </div>
-
-            <!-- Desired Lifestyle Tier -->
-            <div>
-                <label class="block text-sm font-medium mb-2 text-slate-300">Lifestyle Multiplier</label>
-                <select id="lifestyle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" onchange="calculateRetirement()">
-                    <option value="1">Baseline Living (Local standard)</option>
-                    <option value="1.5" selected>Comfortable Expat (Nice condo, dining out daily)</option>
-                    <option value="2.5">"Rich" Tier (Penthouse, private healthcare, luxury)</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Results Dashboard -->
-        <div class="bg-slate-950 p-6 rounded-xl border border-emerald-500/30 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            
-            <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Safe Monthly Yield</p>
-                <div id="monthlyDrawdown" class="text-2xl font-bold text-emerald-400">$3,333</div>
-                <p class="text-xs text-slate-500 mt-1">From S&P growth</p>
-            </div>
-
-            <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Your Target Spend</p>
-                <div id="desiredSpend" class="text-2xl font-bold text-cyan-400">$1,950</div>
-                <p class="text-xs text-slate-500 mt-1">Based on location & style</p>
-            </div>
-
-            <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Portfolio Trajectory</p>
-                <div id="portfolioStatus" class="text-xl font-bold text-emerald-400">Growing Forever</div>
-                <p class="text-xs text-slate-500 mt-1" id="statusSub">Surplus reinvested annually</p>
-            </div>
-
-        </div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="text-center text-slate-500 text-xs py-4">
-        &copy; 2026 GetGeoFire. Built for informational purposes.
-    </footer>
-
-    <!-- Calculation Engine Script -->
-    <script>
-        function calculateRetirement() {
-            const portfolio = parseFloat(document.getElementById('portfolio').value) || 0;
-            const baseCost = parseFloat(document.getElementById('countryCost').value);
-            const returnRate = parseFloat(document.getElementById('returnRate').value) / 100;
-            const lifestyleMult = parseFloat(document.getElementById('lifestyle').value);
-
-            document.getElementById('returnVal').innerText = (returnRate * 100).toFixed(1);
-
-            const annualSafeYield = portfolio * returnRate;
-            const monthlySafeDrawdown = annualSafeYield / 12;
-
-            const targetMonthlySpend = baseCost * lifestyleMult;
-            const targetAnnualSpend = targetMonthlySpend * 12;
-
-            document.getElementById('monthlyDrawdown').innerText = '$' + Math.round(monthlySafeDrawdown).toLocaleString();
-            document.getElementById('desiredSpend').innerText = '$' + Math.round(targetMonthlySpend).toLocaleString();
-
-            const statusEl = document.getElementById('portfolioStatus');
-            const subEl = document.getElementById('statusSub');
-
-            if (annualSafeYield > targetAnnualSpend) {
-                statusEl.innerText = "Growing Forever 🚀";
-                statusEl.className = "text-xl font-bold text-emerald-400";
-                const surplus = annualSafeYield - targetAnnualSpend;
-                subEl.innerText = `+$${Math.round(surplus).toLocaleString()} surplus added/yr`;
-            } else if (annualSafeYield === targetAnnualSpend) {
-                statusEl.innerText = "Exact Balance ⚖️";
-                statusEl.className = "text-xl font-bold text-amber-400";
-                subEl.innerText = "Principal remains flat";
-            } else {
-                statusEl.innerText = "Drawing Down ⚠️";
-                statusEl.className = "text-xl font-bold text-rose-400";
-                subEl.innerText = "Principal decreases over time";
-            }
-        }
-
-        // Run calculation on load
-        calculateRetirement();
-    </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Haven — Retire in Southeast Asia</title>
+    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
