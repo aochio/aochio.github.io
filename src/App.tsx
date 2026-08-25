@@ -12,8 +12,6 @@ const HERO_IMAGE =
   'https://images.pexels.com/photos/4603354/pexels-photo-4603354.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
 
 function App() {
-  // Load the AdSense script once. It only activates ads once you set your
-  // publisher ID in AdSlot.tsx and add real slot IDs.
   useEffect(() => {
     if (document.getElementById('adsense-script')) return;
     const s = document.createElement('script');
@@ -33,23 +31,21 @@ function App() {
     annualReturnPct: 5,
   });
 
-  // 核心：页面加载时通过 IP 自动检测并设置货币
-useEffect(() => {
+  useEffect(() => {
     fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .then(data => {
-            // Check if data.currency exists and is a valid string
-            if (data && data.currency) {
-                setForm(prev => ({
-                    ...prev,
-                    currencyCode: data.currency
-                }));
-            }
-        })
-        .catch(err => {
-            console.log("Could not detect currency via IP, using default USD", err);
-        });
-}, []);
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.currency) {
+          setForm(prev => ({
+            ...prev,
+            currencyCode: data.currency
+          }));
+        }
+      })
+      .catch(err => {
+        console.log("Could not detect currency via IP, using default USD", err);
+      });
+  }, []);
   
   const [country, setCountry] = useState<Country>(COUNTRIES[0]);
   const [lifestyle, setLifestyle] = useState<Lifestyle>('comfortable');
@@ -59,11 +55,8 @@ useEffect(() => {
   const yearsToRetire = Math.max(0, form.retirementAge - form.currentAge);
   const annualRate = (form.annualReturnPct || 0) / 100;
 
-  // 🌟 直接用当前货币进行复利计算，不再绕弯子折腾 USD 汇率
   const currentSav = Number(form.currentSavings || 0);
   const futureSavingsLocal = currentSav * Math.pow(1 + annualRate, yearsToRetire);
-
-  // 同时也保留给 computePlan 用的 USD 版本
   const currentSavingsUsd = currentSav / (homeCurrency.perUsd || 1);
 
   const result = useMemo(
@@ -124,8 +117,12 @@ useEffect(() => {
 
         <AdSlot className="mt-10 min-h-[90px]" format="horizontal" />
 
-      <div className="lg:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8 flex flex-col justify-between">
+        {/* 双栏布局 */}
+        <div className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-5">
+          
+          {/* 左侧：表单栏 + 完美内嵌的市场参考 */}
+          <div className="lg:col-span-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-8 flex flex-col justify-between space-y-6">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
                 <p className="mt-1 mb-5 text-sm text-slate-500">
@@ -134,8 +131,7 @@ useEffect(() => {
                 <PlannerForm value={form} onChange={setForm} />
               </div>
 
-              {/* 📊 严格内嵌在白色大方框内部最底部的市场参考 */}
-              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-2">
+              <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                 <span className="font-bold text-slate-700 block">💡 Historical Market Returns:</span>
                 <div className="flex justify-between"><span>🇺🇸 S&P 500:</span> <span className="font-semibold text-slate-700">~10% (7% adj.)</span></div>
                 <div className="flex justify-between"><span>🚀 Nasdaq 100 (QQQ):</span> <span className="font-semibold text-slate-700">~13%</span></div>
@@ -145,16 +141,17 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="lg:col-span-3">
+          {/* 右侧：结果展示区 + 一体化对比卡片 */}
+          <div className="lg:col-span-3 space-y-6">
             <Results
               result={result}
               homeCurrency={homeCurrency}
               country={country}
               yearsToRetire={yearsToRetire}
             />
-            {/* 🌟 新增的高亮对比卡片：展示复利增长与资产蜕变 */}
             
-<div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            {/* 一体化对比卡片 */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span>🎯</span>
@@ -185,11 +182,9 @@ useEffect(() => {
                   <span className="text-xs text-emerald-600 font-medium mt-0.5 block">At age {form.retirementAge} ({form.annualReturnPct}% return)</span>
                 </div>
 
-                {/* 3. 真实差额对比 (Projected Wealth - Total Nest Egg Needed) */}
+                {/* 3. 差额对比 */}
                 {(() => {
                   const perUsd = homeCurrency.perUsd || 1;
-                  
-                  // 获取上方组件算出来的总目标 Nest Egg (USD)
                   const targetUsd = result 
                     ? (typeof (result as any).nestEggUsd === 'number' ? (result as any).nestEggUsd 
                         : typeof (result as any).nestEgg === 'number' ? (result as any).nestEgg 
@@ -198,7 +193,6 @@ useEffect(() => {
                     : 0;
                   
                   const targetLocal = targetUsd * perUsd;
-                  // 🌟 核心修正：用“预计复利终点”减去“目标总资金”才是真正的盈余或缺口！
                   const diffLocal = futureSavingsLocal - targetLocal;
                   const isSurplus = diffLocal >= 0;
 
@@ -219,7 +213,7 @@ useEffect(() => {
 
               </div>
             </div>
-              {/* 🌟 对比卡片结束 */}
+
           </div>
         </div>
 
